@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Matematik Öğrenme</title>
+    <style>
+        .slide-down {
+            max-height: 200px;
+            overflow: hidden;
+            transition: max-height 0.5s ease, opacity 0.5s ease;
+            opacity: 1;
+        }
+        .hidden {
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.5s ease, opacity 0.5s ease;
+        }
+        .drawer {
+            position: absolute;
+            width: 150px;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 0.5rem;
+            margin-top: -5px;
+            z-index: 10;
+            border-bottom: 4px solid #FBBF24;
+            border-top: 4px solid #FBBF24;
+            padding-bottom: 5px;
+        }
+        .unit-btn {
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: background-color 0.3s ease;
+            position: relative; /* Pozisyon ayarı, alt çizgi için */
+        }
+
+        .unit-btn:not(:last-child) {
+            border-bottom: 1px solid #FBBF24; /* Koyu gri renk ile alt çizgi ekliyoruz */
+        }
+
+       /* SubDrawer için özel ayarlar (eğer gerekirse) */
+        .sub-drawer .unit-btn:not(:last-child) {
+            border-bottom: 1px solid #FBBF24; /* Koyu gri renk ile alt çizgi ekliyoruz */
+        }
+
+        .unit-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 1px;
+            position: relative;
+        }
+        .tab {
+            padding: 5px 20px;
+            border-radius: 0.25rem;
+            white-space: nowrap;
+            transition: background-color 0.3s ease;
+        }
+        .tab:hover, .tab.active {
+            background-color: #FBBF24;
+        }
+        @media (max-width: 640px) {
+            .tab-container {
+                flex-wrap: wrap;
+            }
+        }
+        .sub-drawer {
+            position: absolute;
+            width: 150px;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 0.5rem;
+            margin-top: -60px;
+            z-index: 11;
+            opacity: 0;
+            border-bottom: 4px solid #FBBF24;
+            border-top: 4px solid #FBBF24;
+            padding-bottom: 5px;
+            transform: translateX(-20px); /* Başlangıç pozisyonu */
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .sub-drawer.show {
+            opacity: 1;
+            transform: translateX(0); /* Görünür hale geldiğinde konumlandır */
+        }
+        .sub-drawer.slide-out {
+            opacity: 0;
+            transform: translateX(-20px); /* Soldan kaydırma animasyonu */
+        }
+        .sub-drawer.slide-in {
+            opacity: 1;
+            transform: translateX(0); /* Sağdan kaydırma animasyonu */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-200 to-white">
+    <div class="bg-white bg-opacity-80 backdrop-blur-lg shadow-lg rounded-lg p-4 fixed top-0 left-0 right-0">
+        <div class="tab-container">
+            <div class="tab cursor-pointer font-bold">5. Sınıf</div>
+            <div class="border-l border-gray-300 h-8"></div>
+            <div class="tab cursor-pointer font-bold">6. Sınıf</div>
+            <div class="border-l border-gray-300 h-8"></div>
+            <div class="tab cursor-pointer font-bold">7. Sınıf</div>
+            <div class="border-l border-gray-300 h-8"></div>
+            <div class="tab cursor-pointer font-bold">8. Sınıf</div>
+        </div>
+        <div id="drawers" class="mt-2 relative">
+            <div class="drawer hidden slide-down" data-class="5"></div>
+            <div class="drawer hidden slide-down" data-class="6"></div>
+            <div class="drawer hidden slide-down" data-class="7"></div>
+            <div class="drawer hidden slide-down" data-class="8"></div>
+            <div class="sub-drawer" id="subDrawer"></div>
+        </div>
+    </div>
+    <div class="content text-center mt-24">
+        <h1 class="text-4xl font-bold">Hoş Geldiniz!</h1>
+        <p class="mt-4 text-lg">Matematik dersine dair materyallere buradan ulaşabilirsiniz.</p>
+        <div id="log" class="mt-6 p-4 border rounded-lg bg-white shadow-md">
+            <h2 class="font-bold">Log:</h2>
+            <div id="logMessages" class="text-left"></div>
+        </div>
+    </div>
+    <script>
+      const tabs = document.querySelectorAll('.tab');
+    const drawers = document.querySelectorAll('.drawer');
+    const subDrawer = document.getElementById('subDrawer');
+    const logMessages = document.getElementById('logMessages');
+
+    const classCategories = {
+        "5": [
+            ["Sayılar ve İşlemler", ["Tam Sayılar", "Ondalık Sayılar", "Kesirler"]],
+            ["Geometri", ["Açılar", "Çokgenler", "Çember ve Daire"]]
+        ],
+        "6": [
+            ["Sayılar ve Cebir", ["Oran ve Orantı", "Yüzdeler"]],
+            ["Veri İşleme", ["Tablolar", "Grafikler"]]
+        ],
+        "7": [
+            ["Cebirsel İfadeler", ["Çarpanlar ve Katlar", "Eşitsizlikler"]],
+            ["Geometri", ["Açıortay", "Yükseklik"]]
+        ],
+        "8": [
+            ["Fonksiyonlar", ["Doğrusal Fonksiyonlar", "Parabol"]],
+            ["Analitik Geometri", ["Koordinat Sistemi", "Eğim"]]
+        ],
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            drawers.forEach(drawer => {
+                drawer.classList.add('hidden');
+                drawer.style.maxHeight = '0';
+                drawer.style.opacity = '0';
+                subDrawer.style.display = 'none';
+                subDrawer.classList.add('hide'); // Kapatma animasyonu
+            });
+
+            const classNumber = tab.textContent.charAt(0);
+            const activeDrawer = document.querySelector(`.drawer[data-class="${classNumber}"]`);
+            const units = classCategories[classNumber];
+
+            activeDrawer.innerHTML = ''; // Çekmeceyi temizle
+
+            units.forEach(unit => {
+                const unitButton = document.createElement('div');
+                unitButton.classList.add('unit-btn');
+                unitButton.textContent = unit[0]; // Ünite ismini göster
+                unitButton.dataset.unit = unit[0];
+
+                unitButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleUnitButtonClick(unit, classNumber, unitButton);
+                });
+                activeDrawer.appendChild(unitButton);
+            });
+
+            activeDrawer.classList.remove('hidden');
+            activeDrawer.style.maxHeight = '200px';
+            activeDrawer.style.opacity = '1';
+            activeDrawer.style.display = 'block';
+
+            const tabRect = tab.getBoundingClientRect();
+            const drawerWidth = activeDrawer.offsetWidth + 18;
+            if (tabRect.right + drawerWidth > window.innerWidth) {
+                activeDrawer.style.left = `${tabRect.right - drawerWidth}px`;
+            } else {
+                activeDrawer.style.left = `${tabRect.left - 18}px`;
+            }
+            logMessages.innerHTML += `<div>${classNumber}. sınıf açıldı.</div>`;
+
+            // Aktif tab'ı ayarlama
+            tabs.forEach(t => t.classList.remove('active')); // Diğer tüm tab'ların active sınıfını kaldır
+            tab.classList.add('active'); // Tıklanan tab'a active sınıfını ekle
+        });
+    });
+    function handleUnitButtonClick(unit, classNumber, unitButton) {
+    const topics = unit[1];
+    subDrawer.innerHTML = '<div class="bg-white bg-opacity-80 backdrop-blur-lg w-full p-0rounded-b-md">';
+
+    topics.forEach(topic => {
+        const topicBtn = document.createElement('div');
+        topicBtn.classList.add('unit-btn');
+        topicBtn.textContent = topic;
+        topicBtn.addEventListener('click', () => {
+            logMessages.innerHTML += `<div>${classNumber}. sınıf, ünite: ${unit[0]}, konu: ${topic} seçildi.</div>`;
+
+            // Tüm açılır pencereleri kapat
+            drawers.forEach(drawer => {
+                drawer.classList.add('hidden');
+                drawer.style.maxHeight = '0';
+                drawer.style.opacity = '0';
+            });
+
+            // SubDrawer'ı gizleme animasyonu
+            subDrawer.classList.remove('show');
+            subDrawer.classList.add('hide');
+            setTimeout(() => {
+                subDrawer.style.display = "none"; // Gizlemeden sonra display'i ayarlıyoruz
+            }, 300); // Animasyon süresi ile aynı olmalı
+        });
+        subDrawer.appendChild(topicBtn);
+    });
+    subDrawer.innerHTML += '</div>';
+
+    // SubDrawer'ı açma animasyonu
+    subDrawer.style.display = 'block';
+    subDrawer.classList.remove('hide');
+    setTimeout(() => {
+        subDrawer.classList.add('show'); // Giriş animasyonu için
+    }, 0); // Hemen ardından class'ı eklemek için
+
+    const unitRect = unitButton.getBoundingClientRect();
+    const subDrawerWidth = subDrawer.offsetWidth;
+
+    if (unitRect.right + subDrawerWidth > window.innerWidth) {
+        subDrawer.style.left = `${unitRect.left - subDrawerWidth - 18}px`;
+    } else {
+        subDrawer.style.left = `${unitRect.right - 15}px`;
+    }
+    subDrawer.style.top = `${unitRect.top + window.scrollY - 2}px`;
+}
+
+// Genel kapanma işlevi
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.drawer') && !e.target.closest('.tab')) {
+        drawers.forEach(drawer => {
+            drawer.classList.add('hidden');
+            drawer.style.maxHeight = '0';
+            drawer.style.opacity = '0';
+        });
+        // SubDrawer'ı kapatma animasyonu
+        subDrawer.classList.remove('show');
+        subDrawer.classList.add('hide');
+        setTimeout(() => {
+            subDrawer.style.display = "none"; // Gizlemeden sonra display'i ayarlıyoruz
+        }, 300); // Animasyon süresi ile aynı olmalı
+        
+        tabs.forEach(t => t.classList.remove('active')); // Diğer tüm tab'ların active sınıfını kaldır
+    }
+});
+ </script>
+ <body>
+   <html>
